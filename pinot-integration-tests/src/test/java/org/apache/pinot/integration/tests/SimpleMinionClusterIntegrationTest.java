@@ -121,8 +121,8 @@ public class SimpleMinionClusterIntegrationTest extends ClusterTest {
     verifyTaskCount(task2, 0, 2, 0, 2);
 
     // Should not generate more tasks since SimpleMinionClusterIntegrationTests.NUM_TASKS is 2.
-    // Our test task generator does not generate if there are already this many sub-tasks in the
-    // running+waiting count already.
+    // Our test task generator does not generate if there are already this many top-level tasks
+    // in progress.
     assertNull(_taskManager.scheduleTasks().get(TASK_TYPE));
     assertNull(_taskManager.scheduleTask(TASK_TYPE));
 
