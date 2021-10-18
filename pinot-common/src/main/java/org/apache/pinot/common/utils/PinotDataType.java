@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -28,7 +28,6 @@ import org.apache.pinot.spi.utils.BooleanUtils;
 import org.apache.pinot.spi.utils.BytesUtils;
 import org.apache.pinot.spi.utils.JsonUtils;
 import org.apache.pinot.spi.utils.TimestampUtils;
-
 
 /**
  *  The <code>PinotDataType</code> enum represents the data type of a value in a row from recordReader and provides
@@ -583,7 +582,8 @@ public enum PinotDataType {
       try {
         return Base64.getDecoder().decode(value.toString());
       } catch (Exception e) {
-        throw new RuntimeException("Unable to convert JSON base64 encoded string value to BYTES. Input value: " + value,
+        throw new RuntimeException(
+            "Unable to convert JSON base64 encoded string value to BYTES. Input value: " + value,
             e);
       }
     }
@@ -769,6 +769,12 @@ public enum PinotDataType {
       return sourceType.toStringArray(value);
     }
   },
+  BYTES_ARRAY {
+    @Override
+    public byte[][] convert(Object value, PinotDataType sourceType) {
+      return sourceType.toBytesArray(value);
+    }
+  },
 
   OBJECT_ARRAY;
 
@@ -817,7 +823,8 @@ public enum PinotDataType {
         return JsonUtils.objectToString(value);
       } catch (Exception e) {
         throw new RuntimeException(
-            "Unable to convert " + value.getClass().getCanonicalName() + " to JSON. Input value: " + value, e);
+            "Unable to convert " + value.getClass().getCanonicalName() + " to JSON. Input value: "
+                + value, e);
       }
     }
   }
@@ -1020,6 +1027,24 @@ public enum PinotDataType {
     }
   }
 
+  public byte[][] toBytesArray(Object value) {
+    if (value instanceof byte[][]) {
+      return (byte[][]) value;
+    }
+    if (isSingleValue()) {
+      return new byte[][]{toBytes(value)};
+    } else {
+      Object[] valueArray = toObjectArray(value);
+      int length = valueArray.length;
+      byte[][] bytesArray = new byte[length][];
+      PinotDataType singleValueType = getSingleValueType();
+      for (int i = 0; i < length; i++) {
+        bytesArray[i] = singleValueType.toBytes(valueArray[i]);
+      }
+      return bytesArray;
+    }
+  }
+
   private static Object[] toObjectArray(Object array) {
     Class<?> componentType = array.getClass().getComponentType();
     if (componentType.isPrimitive()) {
@@ -1042,7 +1067,8 @@ public enum PinotDataType {
   }
 
   public Object convert(Object value, PinotDataType sourceType) {
-    throw new UnsupportedOperationException("Cannot convert value from " + sourceType + " to " + this);
+    throw new UnsupportedOperationException(
+        "Cannot convert value from " + sourceType + " to " + this);
   }
 
   /**
@@ -1082,6 +1108,8 @@ public enum PinotDataType {
         return DOUBLE;
       case STRING_ARRAY:
         return STRING;
+      case BYTES_ARRAY:
+        return BYTES;
       case OBJECT_ARRAY:
         return OBJECT;
       default:
@@ -1151,6 +1179,9 @@ public enum PinotDataType {
     if (cls == Short.class) {
       return SHORT_ARRAY;
     }
+    if (cls == byte[].class) {
+      return BYTES_ARRAY;
+    }
     return OBJECT_ARRAY;
   }
 
@@ -1210,7 +1241,8 @@ public enum PinotDataType {
         if (fieldSpec.isSingleValueField()) {
           return BYTES;
         } else {
-          throw new IllegalStateException("There is no multi-value type for BYTES");
+          return BYTES_ARRAY;
+//          throw new IllegalStateException("There is no multi-value type for BYTES");
         }
       default:
         throw new UnsupportedOperationException(
@@ -1253,7 +1285,8 @@ public enum PinotDataType {
       case STRING_ARRAY:
         return STRING_ARRAY;
       default:
-        throw new IllegalStateException("Cannot convert ColumnDataType: " + columnDataType + " to PinotDataType");
+        throw new IllegalStateException(
+            "Cannot convert ColumnDataType: " + columnDataType + " to PinotDataType");
     }
   }
 }
