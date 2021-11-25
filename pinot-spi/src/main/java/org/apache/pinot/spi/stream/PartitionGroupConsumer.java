@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -21,11 +21,14 @@ package org.apache.pinot.spi.stream;
 import java.io.Closeable;
 import java.util.concurrent.TimeoutException;
 
-
 /**
  * Consumer interface for consuming from a partition group of a stream
  */
 public interface PartitionGroupConsumer extends Closeable {
+
+  default void start(StreamPartitionMsgOffset startOffset) {
+
+  }
 
   /**
    * Fetch messages and offsets from the stream partition group
@@ -37,6 +40,16 @@ public interface PartitionGroupConsumer extends Closeable {
    * milliseconds
    * @return An iterable containing messages fetched from the stream partition and their offsets
    */
-  MessageBatch fetchMessages(StreamPartitionMsgOffset startOffset, StreamPartitionMsgOffset endOffset, int timeoutMs)
+  MessageBatch fetchMessages(StreamPartitionMsgOffset startOffset,
+      StreamPartitionMsgOffset endOffset, int timeoutMs)
       throws TimeoutException;
+
+  default StreamPartitionMsgOffset commit(
+      final StreamPartitionMsgOffset currentOffset) {
+    return null;
+  }
+
+  default void rollback() {
+
+  }
 }
